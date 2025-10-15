@@ -1,5 +1,6 @@
 from app import app
-from models import db, Bird
+from config import db
+from models import Bird
 
 db.init_app(app)
 
