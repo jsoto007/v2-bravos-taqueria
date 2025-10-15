@@ -3,8 +3,8 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-
-from flask import Flask, jsonify, request, make_response, render_template
+from flask import Flask, jsonify, request, make_response, render_template, send_from_directory
+from jinja2 import TemplateNotFound
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 
@@ -17,16 +17,40 @@ app = Flask(
     template_folder='../client/build'
 )
 
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URI')
+# Support both SQLALCHEMY_DATABASE_URI and DATABASE_URI env vars
+db_uri = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URI')
+app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.json.compact = False
 
-migrate = Migrate(app, db)
+# Ensure db is initialized before migrate
 db.init_app(app)
+migrate = Migrate(app, db)
+
+
+# Simple root route
+@app.get('/')
+def root_ok():
+    return 'API is running', 200
+
+# Minimal favicon handler
+@app.get('/favicon.ico')
+def favicon():
+    static_dir = app.static_folder or os.path.join(os.path.dirname(__file__), 'static')
+    icon_path = os.path.join(static_dir or '', 'favicon.ico')
+    if os.path.exists(icon_path):
+        return send_from_directory(static_dir, 'favicon.ico')
+    return '', 204
 
 @app.errorhandler(404)
 def not_found(e):
-    return render_template("index.html")
+    try:
+        return render_template("index.html")
+    except TemplateNotFound:
+        return make_response(jsonify({
+            'error': 'Not Found',
+            'message': 'No matching route and no index.html present to serve.'
+        }), 404)
 
 api = Api(app)
 
