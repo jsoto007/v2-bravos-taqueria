@@ -3,20 +3,15 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
-from flask import Flask, jsonify, request, make_response, render_template, send_from_directory
+from flask import jsonify, request, make_response, render_template, send_from_directory
 from jinja2 import TemplateNotFound
 from flask_migrate import Migrate
 from flask_restful import Api, Resource
 from flask_cors import CORS
 
-from models import db, Bird
+from config import app, db
+from models import Bird
 
-app = Flask(
-    __name__,
-    static_url_path='',
-    static_folder='../client/build',
-    template_folder='../client/build'
-)
 
 # Enable CORS for client ↔ server requests (credentials allow session cookies)
 CORS(app, supports_credentials=True)
@@ -24,15 +19,7 @@ CORS(app, supports_credentials=True)
 # Long-cache for fingerprinted static assets; API/HTML handled below
 app.config["SEND_FILE_MAX_AGE_DEFAULT"] = 31536000  # 1 year
 
-# Support both SQLALCHEMY_DATABASE_URI and DATABASE_URI env vars
-db_uri = os.environ.get('SQLALCHEMY_DATABASE_URI') or os.environ.get('DATABASE_URI')
-app.config['SQLALCHEMY_DATABASE_URI'] = db_uri
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.json.compact = False
-
-
 # Ensure db is initialized before migrate
-db.init_app(app)
 migrate = Migrate(app, db)
 
 # -------- Caching policy (static vs API vs HTML) -------- #
@@ -111,32 +98,33 @@ api.add_resource(Birds, '/api/birds')
 class BirdByID(Resource):
     
     def get(self, id):
-        bird = Bird.query.filter_by(id=id).first().to_dict()
-        return make_response(jsonify(bird), 200)
+        bird = Bird.query.filter_by(id=id).first()
+        if not bird:
+            return make_response(jsonify({'error': 'Not Found', 'message': f'Bird {id} not found'}), 404)
+        return make_response(jsonify(bird.to_dict()), 200)
 
     def patch(self, id):
 
         data = request.get_json()
 
         bird = Bird.query.filter_by(id=id).first()
-
+        if not bird:
+            return make_response(jsonify({'error': 'Not Found', 'message': f'Bird {id} not found'}), 404)
         for attr in data:
             setattr(bird, attr, data[attr])
-
         db.session.add(bird)
         db.session.commit()
-
         return make_response(bird.to_dict(), 200)
 
     def delete(self, id):
-
         bird = Bird.query.filter_by(id=id).first()
+        if not bird:
+            return make_response(jsonify({'error': 'Not Found', 'message': f'Bird {id} not found'}), 404)
         db.session.delete(bird)
         db.session.commit()
-
         return make_response('', 204)
 
-api.add_resource(BirdByID, '/birds/<int:id>')
+api.add_resource(BirdByID, '/api/birds/<int:id>')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5555)))
