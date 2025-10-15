@@ -101,7 +101,7 @@ function App() {
       {!loading && !error && renderBirds()}
 
       <footer className="mt-6 text-xs text-gray-500">
-        Fetching from <code className="rounded bg-gray-100 px-1">/birds</code>
+        Fetching from <code className="rounded bg-gray-100 px-1">/api/birds</code>
       </footer>
     </div>
   );
