@@ -4,19 +4,20 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-flask = "*"
-flask-migrate = "*"
-flask-restful = "*"
+flask = "==2.3.3"
+flask-migrate = "==4.0.7"
+flask-restful = "==0.3.10"
 flask-sqlalchemy = "==2.5.1"
+sqlalchemy = "==1.4.52"
+psycopg2-binary = "==2.9.9"
+python-dotenv = "*"
+flask-cors = "*"
 gunicorn = "*"
 honcho = "*"
-importlib-metadata = "*"
-psycopg2-binary = "*"
-python-dotenv = "*"
 sqlalchemy-serializer = "*"
-flask-cors = "*"
+# importlib-metadata is built-in on 3.11+, no need to pin it
 
 [dev-packages]
 
 [requires]
-python_version = "3.8.13"
+python_version = "3.11.9"
