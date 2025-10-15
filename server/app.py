@@ -12,6 +12,10 @@ from flask_cors import CORS
 from config import app, db
 from models import Bird
 
+DIST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../client/dist')
+app.static_folder = DIST_DIR
+app.template_folder = DIST_DIR
+app.static_url_path = ''
 
 # Enable CORS for client ↔ server requests (credentials allow session cookies)
 CORS(app, supports_credentials=True)
@@ -49,6 +53,8 @@ def add_cache_headers(resp):
 # Simple root route
 @app.get('/')
 def root_ok():
+    if 'DIST_DIR' in globals() and DIST_DIR and os.path.exists(os.path.join(DIST_DIR, 'index.html')):
+        return render_template('index.html')
     return 'API is running', 200
 
 # Minimal favicon handler
@@ -59,6 +65,11 @@ def favicon():
     if os.path.exists(icon_path):
         return send_from_directory(static_dir, 'favicon.ico')
     return '', 204
+
+# Lightweight health endpoint for probes
+@app.get('/api/health')
+def api_health():
+    return jsonify({"status": "ok"}), 200
 
 @app.errorhandler(404)
 def not_found(e):
@@ -128,5 +139,3 @@ api.add_resource(BirdByID, '/api/birds/<int:id>')
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5555)))
-
-
