@@ -1,2 +1,2 @@
-web: PORT=4000 npm start --prefix client
-api: gunicorn -b 127.0.0.1:5555 --chdir ./server app:app
+web: npx vite --port 4000 --host --root client
+api: gunicorn -b 0.0.0.0:$PORT --timeout 120 --workers 3 --chdir ./server app:app
